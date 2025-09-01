@@ -1,67 +1,93 @@
-const express = require('express');
-const cors = require('cors');
-const multer = require('multer');
-const path = require('path');
-require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT || 5000;
-
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
-
-// File upload configuration
-const storage = multer.diskStorage({
-  destination: './uploads/',
-  filename: function(req, file, cb) {
-    cb(null, 'questionnaire-' + Date.now() + path.extname(file.originalname));
-  }
-});
-
-const upload = multer({ storage: storage });
-
-// Routes
-app.post('/api/upload-questionnaire', upload.single('questionnaire'), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-    res.json({ 
-      message: 'File uploaded successfully',
-      filename: req.file.filename 
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Upload failed' });
-  }
-});
-
 app.post('/api/analyze-questionnaire', async (req, res) => {
   try {
-    const { responses } = req.body;
+    const { responses, totalScore, healthSpanCategory } = req.body;
     
-    // This is where we'll integrate with ChatGPT
-    // For now, returning mock data
-    const mockResult = {
-      healthSpanCategory: "Active Aging",
-      interestAreas: ["Physical Wellness", "Mental Health", "Social Connection"],
-      recommendedProgram: {
-        name: "Holistic Wellness Journey",
+    // Define the seven pillars of wellness
+    const sevenPillars = [
+      'Physical Wellness',
+      'Mental Health', 
+      'Social Connection',
+      'Nutrition',
+      'Sleep',
+      'Purpose & Meaning',
+      'Financial Wellness'
+    ];
+    
+    // Map health span categories to program recommendations
+    const programMappings = {
+      'Active Explorer': {
+        name: 'Peak Performance Program',
         modules: [
-          "Strength Training Fundamentals",
-          "Mindfulness & Meditation",
-          "Social Engagement Strategies"
+          'Advanced Strength Training',
+          'High-Intensity Interval Training',
+          'Cognitive Enhancement',
+          'Social Leadership',
+          'Purpose-Driven Living'
+        ]
+      },
+      'Steady Navigator': {
+        name: 'Balanced Wellness Journey',
+        modules: [
+          'Moderate Exercise Program',
+          'Stress Management',
+          'Social Engagement',
+          'Nutrition Optimization',
+          'Sleep Hygiene'
+        ]
+      },
+      'Support Seeker': {
+        name: 'Gentle Wellness Path',
+        modules: [
+          'Low-Impact Exercise',
+          'Mental Health Support',
+          'Community Building',
+          'Basic Nutrition',
+          'Rest & Recovery'
+        ]
+      },
+      'Dependent': {
+        name: 'Compassionate Care Program',
+        modules: [
+          'Assisted Movement',
+          'Emotional Support',
+          'Family Connection',
+          'Medical Nutrition',
+          'Comfort Care'
+        ]
+      },
+      'Declining': {
+        name: 'Comfort & Dignity Program',
+        modules: [
+          'Gentle Movement',
+          'Emotional Comfort',
+          'Family Support',
+          'Palliative Nutrition',
+          'Peaceful Living'
+        ]
+      },
+      'End-of-Life': {
+        name: 'Compassionate End-of-Life Care',
+        modules: [
+          'Comfort Measures',
+          'Emotional Support',
+          'Family Connection',
+          'Comfort Nutrition',
+          'Peaceful Transition'
         ]
       }
     };
     
-    res.json(mockResult);
-  } catch (error) {
-    res.status(500).json({ error: 'Analysis failed' });
-  }
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    // Get the recommended program based on health span category
+    const recommendedProgram = programMappings[healthSpanCategory] || programMappings['Steady Navigator'];
+    
+    // For now, return mock interest areas (we'll enhance this later)
+    const interestAreas = [
+      'Physical Wellness',
+      'Mental Health',
+      'Social Connection'
+    ];
+    
+    const result = {
+      healthSpanCategory: healthSpanCategory,
+      totalScore: totalScore,
+      interestAreas: interestAreas,

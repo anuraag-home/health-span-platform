@@ -4,7 +4,7 @@ import axios from 'axios';
 import './QuestionnairePage.css';
 
 interface QuestionnaireResponse {
-  [key: string]: string | number;
+  [key: string]: number;
 }
 
 const QuestionnairePage: React.FC = () => {
@@ -13,7 +13,7 @@ const QuestionnairePage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
-  const handleInputChange = (questionId: string, value: string | number) => {
+  const handleInputChange = (questionId: string, value: number) => {
     setResponses(prev => ({
       ...prev,
       [questionId]: value
@@ -25,6 +25,20 @@ const QuestionnairePage: React.FC = () => {
     if (file) {
       setUploadedFile(file);
     }
+  };
+
+  const calculateScore = () => {
+    const totalScore = Object.values(responses).reduce((sum, score) => sum + score, 0);
+    return totalScore;
+  };
+
+  const getHealthSpanCategory = (score: number) => {
+    if (score >= 35) return "Active Explorer";
+    if (score >= 28) return "Steady Navigator";
+    if (score >= 20) return "Support Seeker";
+    if (score >= 15) return "Dependent";
+    if (score >= 10) return "Declining";
+    return "End-of-Life";
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -42,16 +56,24 @@ const QuestionnairePage: React.FC = () => {
         console.log('File uploaded:', uploadResponse.data);
       }
 
+      // Calculate score and category
+      const totalScore = calculateScore();
+      const healthSpanCategory = getHealthSpanCategory(totalScore);
+
       // Analyze questionnaire responses
       const analysisResponse = await axios.post('/api/analyze-questionnaire', {
-        responses: responses
+        responses: responses,
+        totalScore: totalScore,
+        healthSpanCategory: healthSpanCategory
       });
 
       // Navigate to results page with the analysis
       navigate('/results', { 
         state: { 
           results: analysisResponse.data,
-          responses: responses 
+          responses: responses,
+          totalScore: totalScore,
+          healthSpanCategory: healthSpanCategory
         } 
       });
 
@@ -63,182 +85,114 @@ const QuestionnairePage: React.FC = () => {
     }
   };
 
+  const questions = [
+    {
+      id: 'mobility',
+      text: 'I can walk briskly for 15–20 minutes without fatigue.',
+      category: 'Mobility & Stamina'
+    },
+    {
+      id: 'independence',
+      text: 'I can manage daily self-care (bathing, dressing, eating) without help.',
+      category: 'Daily Independence'
+    },
+    {
+      id: 'energy',
+      text: 'I wake up feeling energetic and able to manage my day.',
+      category: 'Energy & Vitality'
+    },
+    {
+      id: 'cognitive',
+      text: 'I can remember names, events, and manage tasks without frequent reminders.',
+      category: 'Cognitive Sharpness'
+    },
+    {
+      id: 'social',
+      text: 'I actively meet or speak with friends, family, or community every week.',
+      category: 'Social Engagement'
+    },
+    {
+      id: 'resilience',
+      text: 'I handle stress, setbacks, or health worries without feeling overwhelmed.',
+      category: 'Emotional Resilience'
+    },
+    {
+      id: 'chronic',
+      text: 'My health conditions (if any) are well managed and don\'t limit my daily life.',
+      category: 'Chronic Conditions'
+    },
+    {
+      id: 'balance',
+      text: 'I can bend, climb stairs, or stand up from a chair without difficulty.',
+      category: 'Balance & Flexibility'
+    },
+    {
+      id: 'support',
+      text: 'I rarely need assistance from others for my daily routines.',
+      category: 'Support Needs'
+    },
+    {
+      id: 'purpose',
+      text: 'I feel motivated about my future and look forward to activities.',
+      category: 'Purpose & Outlook'
+    }
+  ];
+
+  const totalScore = calculateScore();
+
   return (
     <div className="questionnaire-page">
       <div className="container">
         <h1>Health & Wellness Assessment</h1>
-        <p>Please answer the following questions to help us create your personalized program.</p>
+        <p>Please answer each question on a scale of 1 to 4:</p>
+        
+        <div className="scoring-guide">
+          <h3>Scoring Guide:</h3>
+          <ul>
+            <li><strong>1</strong> = Never / Very Difficult</li>
+            <li><strong>2</strong> = Sometimes / With Effort</li>
+            <li><strong>3</strong> = Often / Manageable</li>
+            <li><strong>4</strong> = Always / Very Easy</li>
+          </ul>
+        </div>
 
         <form onSubmit={handleSubmit} className="questionnaire-form">
           
-          {/* Health Span Questions */}
-          <section className="question-section">
-            <h2>Health & Physical Wellness</h2>
-            
-            <div className="question">
-              <label>What is your current age?</label>
-              <input
-                type="number"
-                value={responses.age || ''}
-                onChange={(e) => handleInputChange('age', e.target.value)}
-                required
-              />
+          {questions.map((question, index) => (
+            <div key={question.id} className="question">
+              <label>
+                <span className="question-number">{index + 1}.</span>
+                <span className="question-category">{question.category}:</span>
+                <span className="question-text">{question.text}</span>
+              </label>
+              
+              <div className="radio-group">
+                {[1, 2, 3, 4].map((value) => (
+                  <label key={value} className="radio-option">
+                    <input
+                      type="radio"
+                      name={question.id}
+                      value={value}
+                      checked={responses[question.id] === value}
+                      onChange={(e) => handleInputChange(question.id, parseInt(e.target.value))}
+                      required
+                    />
+                    <span className="radio-label">{value}</span>
+                  </label>
+                ))}
+              </div>
             </div>
+          ))}
 
-            <div className="question">
-              <label>How would you rate your current physical activity level?</label>
-              <select
-                value={responses.activityLevel || ''}
-                onChange={(e) => handleInputChange('activityLevel', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="sedentary">Sedentary (little to no exercise)</option>
-                <option value="lightly-active">Lightly Active (light exercise 1-3 days/week)</option>
-                <option value="moderately-active">Moderately Active (moderate exercise 3-5 days/week)</option>
-                <option value="very-active">Very Active (hard exercise 6-7 days/week)</option>
-                <option value="extremely-active">Extremely Active (very hard exercise, physical job)</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Do you have any chronic health conditions?</label>
-              <select
-                value={responses.chronicConditions || ''}
-                onChange={(e) => handleInputChange('chronicConditions', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="none">None</option>
-                <option value="diabetes">Diabetes</option>
-                <option value="hypertension">Hypertension</option>
-                <option value="heart-disease">Heart Disease</option>
-                <option value="arthritis">Arthritis</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </section>
-
-          {/* Seven Pillars Questions */}
-          <section className="question-section">
-            <h2>Interest Areas - Seven Pillars of Wellness</h2>
-            
-            <div className="question">
-              <label>Physical Wellness - How interested are you in improving your physical fitness?</label>
-              <select
-                value={responses.physicalWellness || ''}
-                onChange={(e) => handleInputChange('physicalWellness', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Not interested</option>
-                <option value="2">Slightly interested</option>
-                <option value="3">Somewhat interested</option>
-                <option value="4">Very interested</option>
-                <option value="5">Extremely interested</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Mental Health - How important is mental wellness to you?</label>
-              <select
-                value={responses.mentalHealth || ''}
-                onChange={(e) => handleInputChange('mentalHealth', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Not important</option>
-                <option value="2">Slightly important</option>
-                <option value="3">Somewhat important</option>
-                <option value="4">Very important</option>
-                <option value="5">Extremely important</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Social Connection - How would you rate your current social connections?</label>
-              <select
-                value={responses.socialConnection || ''}
-                onChange={(e) => handleInputChange('socialConnection', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Very isolated</option>
-                <option value="2">Somewhat isolated</option>
-                <option value="3">Moderate connections</option>
-                <option value="4">Good connections</option>
-                <option value="5">Excellent connections</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Nutrition - How interested are you in improving your diet?</label>
-              <select
-                value={responses.nutrition || ''}
-                onChange={(e) => handleInputChange('nutrition', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Not interested</option>
-                <option value="2">Slightly interested</option>
-                <option value="3">Somewhat interested</option>
-                <option value="4">Very interested</option>
-                <option value="5">Extremely interested</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Sleep - How would you rate your current sleep quality?</label>
-              <select
-                value={responses.sleep || ''}
-                onChange={(e) => handleInputChange('sleep', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Poor</option>
-                <option value="2">Fair</option>
-                <option value="3">Good</option>
-                <option value="4">Very Good</option>
-                <option value="5">Excellent</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Purpose & Meaning - How fulfilled do you feel in your life's purpose?</label>
-              <select
-                value={responses.purpose || ''}
-                onChange={(e) => handleInputChange('purpose', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Not fulfilled</option>
-                <option value="2">Slightly fulfilled</option>
-                <option value="3">Somewhat fulfilled</option>
-                <option value="4">Very fulfilled</option>
-                <option value="5">Extremely fulfilled</option>
-              </select>
-            </div>
-
-            <div className="question">
-              <label>Financial Wellness - How secure do you feel about your financial future?</label>
-              <select
-                value={responses.financial || ''}
-                onChange={(e) => handleInputChange('financial', e.target.value)}
-                required
-              >
-                <option value="">Select an option</option>
-                <option value="1">Very insecure</option>
-                <option value="2">Somewhat insecure</option>
-                <option value="3">Moderately secure</option>
-                <option value="4">Secure</option>
-                <option value="5">Very secure</option>
-              </select>
-            </div>
-          </section>
+          {/* Current Score Display */}
+          <div className="score-display">
+            <h3>Current Score: {totalScore} / 40</h3>
+            <p>Health Span Category: <strong>{getHealthSpanCategory(totalScore)}</strong></p>
+          </div>
 
           {/* File Upload Section */}
           <section className="question-section">
-            <h2>Additional Information (Optional)</h2>
+            <h2>Alternative: Upload Completed Questionnaire</h2>
             <p>If you prefer, you can download our questionnaire template, fill it out, and upload it here:</p>
             
             <div className="file-upload">
@@ -257,7 +211,7 @@ const QuestionnairePage: React.FC = () => {
           <button 
             type="submit" 
             className="submit-button"
-            disabled={isSubmitting}
+            disabled={isSubmitting || Object.keys(responses).length < 10}
           >
             {isSubmitting ? 'Processing...' : 'Submit Assessment'}
           </button>
