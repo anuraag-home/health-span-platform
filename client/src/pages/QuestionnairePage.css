@@ -1,0 +1,131 @@
+.questionnaire-page {
+  min-height: 100vh;
+  background: #f8f9fa;
+  padding: 40px 0;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.questionnaire-page h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 10px;
+  font-size: 2.5rem;
+}
+
+.questionnaire-page > .container > p {
+  text-align: center;
+  color: #6c757d;
+  margin-bottom: 40px;
+  font-size: 1.1rem;
+}
+
+.questionnaire-form {
+  background: white;
+  padding: 40px;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.question-section {
+  margin-bottom: 50px;
+}
+
+.question-section h2 {
+  color: #2c3e50;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 10px;
+  margin-bottom: 30px;
+  font-size: 1.8rem;
+}
+
+.question {
+  margin-bottom: 30px;
+}
+
+.question label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 1.1rem;
+}
+
+.question input,
+.question select {
+  width: 100%;
+  padding: 12px 15px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+}
+
+.question input:focus,
+.question select:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.file-upload {
+  margin-top: 20px;
+}
+
+.file-upload input[type="file"] {
+  display: none;
+}
+
+.file-upload-label {
+  display: block;
+  padding: 20px;
+  border: 2px dashed #3498db;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #3498db;
+  font-weight: 500;
+}
+
+.file-upload-label:hover {
+  background: #f8f9fa;
+  border-color: #2980b9;
+}
+
+.submit-button {
+  width: 100%;
+  padding: 15px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  margin-top: 20px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: #2980b9;
+}
+
+.submit-button:disabled {
+  background: #bdc3c7;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .questionnaire-form {
+    padding: 20px;
+  }
+  
+  .questionnaire-page h1 {
+    font-size: 2rem;
+  }
+}
