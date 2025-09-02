@@ -7,6 +7,8 @@ interface QuestionnaireResponse {
   [key: string]: number;
 }
 
+const API_BASE = process.env.REACT_APP_API_BASE || '';
+
 const QuestionnairePage: React.FC = () => {
   const navigate = useNavigate();
   const [responses, setResponses] = useState<QuestionnaireResponse>({});
@@ -52,7 +54,7 @@ const QuestionnairePage: React.FC = () => {
         // Handle file upload
         const formData = new FormData();
         formData.append('questionnaire', uploadedFile);
-        const uploadResponse = await axios.post('/api/upload-questionnaire', formData);
+        const uploadResponse = await axios.post(${API_BASE}/api/upload-questionnaire, formData);
         console.log('File uploaded:', uploadResponse.data);
       }
 
@@ -61,7 +63,7 @@ const QuestionnairePage: React.FC = () => {
       const healthSpanCategory = getHealthSpanCategory(totalScore);
 
       // Analyze questionnaire responses
-      const analysisResponse = await axios.post('/api/analyze-questionnaire', {
+      const analysisResponse = await axios.post(${API_BASE}/api/analyze-questionnaire, {
         responses: responses,
         totalScore: totalScore,
         healthSpanCategory: healthSpanCategory
