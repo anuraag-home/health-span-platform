@@ -8,13 +8,35 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+
+// Update this with your exact Vercel URL
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'https://health-span-platform-5re3thdzu-anuraag-nallapatis-projects.vercel.app'
+];
+
+
 // Initialize OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow same-origin or curl/postman with no origin
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
+  },
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+  optionsSuccessStatus: 204
+}));
+
+// Ensure preflight works for all routes
+app.options('*', cors());
 app.use(express.json());
 app.use(express.static('public'));
 
