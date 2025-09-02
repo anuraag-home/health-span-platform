@@ -70,23 +70,23 @@ app.post('/api/analyze-questionnaire', async (req, res) => {
     console.log('=== API Request Received ===');
     console.log('Request body:', req.body);
     
-    const { responses, totalScore, healthSpanCategory } = req.body;
+    const { responses, totalScore, healthSpanCategory, userInfo } = req.body;
     
-    console.log('Extracted data:', { responses, totalScore, healthSpanCategory });
+    console.log('Extracted data:', { responses, totalScore, healthSpanCategory, userInfo });
     
     // Validate the data
-    if (!responses || !totalScore || !healthSpanCategory) {
+    if (!responses || !totalScore || !healthSpanCategory || !userInfo || !userInfo.name || !userInfo.email) {
       console.log('Missing required data');
       return res.status(400).json({ 
-        error: 'Missing required data',
-        received: { responses, totalScore, healthSpanCategory }
+        error: 'Missing required data (responses, totalScore, healthSpanCategory, name, email)',
+        received: { responses, totalScore, healthSpanCategory, userInfo }
       });
     }
     
     console.log('Data validation passed');
     
     // Create a detailed prompt for ChatGPT
-    const prompt = createAssessmentPrompt(responses, totalScore, healthSpanCategory);
+    const prompt = createAssessmentPrompt(responses, totalScore, healthSpanCategory, userInfo);
     
     console.log('Calling OpenAI API...');
     
@@ -190,6 +190,7 @@ app.post('/api/analyze-questionnaire', async (req, res) => {
       interestAreas: interestAreas,
       recommendedProgram: recommendedProgram,
       responses: responses,
+      userInfo: userInfo,
       aiAssessment: aiAssessment
     };
     
@@ -230,7 +231,7 @@ Note: AI assessment is temporarily unavailable. Please try again later.`;
 });
 
 // Function to create a detailed prompt for ChatGPT
-function createAssessmentPrompt(responses, totalScore, healthSpanCategory) {
+function createAssessmentPrompt(responses, totalScore, healthSpanCategory, userInfo) {
   const questionLabels = {
     mobility: 'Mobility & Stamina',
     independence: 'Daily Independence',
@@ -244,7 +245,7 @@ function createAssessmentPrompt(responses, totalScore, healthSpanCategory) {
     purpose: 'Purpose & Outlook'
   };
   
-  let responseText = `Health Assessment Results:\n\n`;
+  let responseText = `Health Assessment Results for ${userInfo.name} (${userInfo.email}):\n\n`;
   responseText += `Total Score: ${totalScore}/40\n`;
   responseText += `Health Span Category: ${healthSpanCategory}\n\n`;
   responseText += `Individual Question Responses:\n`;
@@ -254,13 +255,13 @@ function createAssessmentPrompt(responses, totalScore, healthSpanCategory) {
     responseText += `- ${label}: ${value}/4\n`;
   });
   
-  responseText += `\nPlease provide a comprehensive, personalized assessment that includes:\n`;
+  responseText += `\nPlease provide a comprehensive, personalized assessment for ${userInfo.name} that includes:\n`;
   responseText += `1. A detailed interpretation of their current health status\n`;
   responseText += `2. Specific strengths and areas for improvement\n`;
   responseText += `3. Personalized recommendations for their wellness journey\n`;
   responseText += `4. Encouraging and actionable next steps\n`;
   responseText += `5. A compassionate tone that respects their current situation\n\n`;
-  responseText += `Focus on being supportive, practical, and motivating while being realistic about their current health span category.`;
+  responseText += `Address them by name (${userInfo.name}) and focus on being supportive, practical, and motivating while being realistic about their current health span category.`;
   
   return responseText;
 }

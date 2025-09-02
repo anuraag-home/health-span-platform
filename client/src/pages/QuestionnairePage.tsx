@@ -7,11 +7,17 @@ interface QuestionnaireResponse {
   [key: string]: number;
 }
 
+interface UserInfo {
+  name: string;
+  email: string;
+}
+
 const API_BASE = process.env.REACT_APP_API_BASE || '';
 
 const QuestionnairePage: React.FC = () => {
   const navigate = useNavigate();
   const [responses, setResponses] = useState<QuestionnaireResponse>({});
+  const [userInfo, setUserInfo] = useState<UserInfo>({ name: '', email: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
@@ -19,6 +25,13 @@ const QuestionnairePage: React.FC = () => {
     setResponses(prev => ({
       ...prev,
       [questionId]: value
+    }));
+  };
+
+  const handleUserInfoChange = (field: keyof UserInfo, value: string) => {
+    setUserInfo(prev => ({
+      ...prev,
+      [field]: value
     }));
   };
 
@@ -66,7 +79,8 @@ const QuestionnairePage: React.FC = () => {
       const analysisResponse = await axios.post(`${API_BASE}/api/analyze-questionnaire`, {
         responses: responses,
         totalScore: totalScore,
-        healthSpanCategory: healthSpanCategory
+        healthSpanCategory: healthSpanCategory,
+        userInfo: userInfo
       });
 
       // Navigate to results page with the analysis
@@ -160,7 +174,39 @@ const QuestionnairePage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="questionnaire-form">
           
-          {questions.map((question, index) => (
+          {/* User Information Section */}
+          <section className="user-info-section">
+            <h2>Your Information</h2>
+            <div className="user-info-fields">
+              <div className="user-field">
+                <label htmlFor="name">Full Name *</label>
+                <input
+                  type="text"
+                  id="name"
+                  value={userInfo.name}
+                  onChange={(e) => handleUserInfoChange('name', e.target.value)}
+                  required
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div className="user-field">
+                <label htmlFor="email">Email Address *</label>
+                <input
+                  type="email"
+                  id="email"
+                  value={userInfo.email}
+                  onChange={(e) => handleUserInfoChange('email', e.target.value)}
+                  required
+                  placeholder="Enter your email address"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Health Assessment Questions */}
+          <section className="questions-section">
+            <h2>Health Assessment</h2>
+            {questions.map((question, index) => (
             <div key={question.id} className="question">
               <label>
                 <span className="question-number">{index + 1}.</span>
@@ -213,7 +259,7 @@ const QuestionnairePage: React.FC = () => {
           <button 
             type="submit" 
             className="submit-button"
-            disabled={isSubmitting || Object.keys(responses).length < 10}
+            disabled={isSubmitting || Object.keys(responses).length < 10 || !userInfo.name || !userInfo.email}
           >
             {isSubmitting ? 'Processing...' : 'Submit Assessment'}
           </button>
