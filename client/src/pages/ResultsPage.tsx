@@ -4,11 +4,13 @@ import './ResultsPage.css';
 
 interface ResultsData {
   healthSpanCategory: string;
+  totalScore: number;
   interestAreas: string[];
   recommendedProgram: {
     name: string;
     modules: string[];
   };
+  aiAssessment: string;
 }
 
 const ResultsPage: React.FC = () => {
@@ -53,14 +55,29 @@ const ResultsPage: React.FC = () => {
     <div className="results-page">
       <div className="container">
         <header className="results-header">
-          <h1>Your Personalized Wellness Program</h1>
-          <p>Based on your assessment, here's your customized health-span journey</p>
+          <h1>Your Personalized Wellness Assessment</h1>
+          <p>Based on your responses, here's your comprehensive health span analysis</p>
         </header>
+
+        {/* AI Assessment Section */}
+        <section className="ai-assessment">
+          <h2>Your Personalized Assessment</h2>
+          <div className="assessment-card">
+            <div className="assessment-content">
+              {results.aiAssessment.split('\n').map((paragraph, index) => (
+                <p key={index} className="assessment-paragraph">
+                  {paragraph}
+                </p>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="health-span-category">
           <h2>Your Health Span Category</h2>
           <div className="category-card">
             <h3>{results.healthSpanCategory}</h3>
+            <p>Total Score: {results.totalScore}/40</p>
             <p>This category reflects your current health status and aging trajectory.</p>
           </div>
         </section>

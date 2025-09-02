@@ -1,17 +1,92 @@
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const OpenAI = require('openai');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Initialize OpenAI
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.static('public'));
+
+// File upload configuration
+const storage = multer.diskStorage({
+  destination: './uploads/',
+  filename: function(req, file, cb) {
+    cb(null, 'questionnaire-' + Date.now() + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
+
+// Routes
+app.post('/api/upload-questionnaire', upload.single('questionnaire'), (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    res.json({ 
+      message: 'File uploaded successfully',
+      filename: req.file.filename 
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Upload failed' });
+  }
+});
+
 app.post('/api/analyze-questionnaire', async (req, res) => {
   try {
+    console.log('=== API Request Received ===');
+    console.log('Request body:', req.body);
+    
     const { responses, totalScore, healthSpanCategory } = req.body;
     
-    // Define the seven pillars of wellness
-    const sevenPillars = [
-      'Physical Wellness',
-      'Mental Health', 
-      'Social Connection',
-      'Nutrition',
-      'Sleep',
-      'Purpose & Meaning',
-      'Financial Wellness'
-    ];
+    console.log('Extracted data:', { responses, totalScore, healthSpanCategory });
+    
+    // Validate the data
+    if (!responses || !totalScore || !healthSpanCategory) {
+      console.log('Missing required data');
+      return res.status(400).json({ 
+        error: 'Missing required data',
+        received: { responses, totalScore, healthSpanCategory }
+      });
+    }
+    
+    console.log('Data validation passed');
+    
+    // Create a detailed prompt for ChatGPT
+    const prompt = createAssessmentPrompt(responses, totalScore, healthSpanCategory);
+    
+    console.log('Calling OpenAI API...');
+    
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content: "You are a compassionate health and wellness expert specializing in aging and longevity. Provide detailed, personalized assessments that are encouraging, actionable, and respectful of the individual's current health status. Focus on practical recommendations and positive reinforcement."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      max_tokens: 1500,
+      temperature: 0.7
+    });
+    
+    const aiAssessment = completion.choices[0].message.content;
+    console.log('OpenAI response received');
     
     // Map health span categories to program recommendations
     const programMappings = {
@@ -91,3 +166,83 @@ app.post('/api/analyze-questionnaire', async (req, res) => {
       healthSpanCategory: healthSpanCategory,
       totalScore: totalScore,
       interestAreas: interestAreas,
+      recommendedProgram: recommendedProgram,
+      responses: responses,
+      aiAssessment: aiAssessment
+    };
+    
+    console.log('Sending response with AI assessment');
+    res.json(result);
+  } catch (error) {
+    console.error('=== ERROR in analyze-questionnaire ===');
+    console.error('Error details:', error);
+    console.error('Error message:', error.message);
+    
+    // If OpenAI API fails, fall back to mock assessment
+    if (error.message.includes('API key') || error.message.includes('OpenAI')) {
+      console.log('OpenAI API error, falling back to mock assessment');
+      const mockAssessment = `Based on your assessment, you scored ${req.body.totalScore} out of 40 points, placing you in the "${req.body.healthSpanCategory}" category. 
+
+Your responses show particular strengths in areas where you scored 3 or 4, and areas for improvement where you scored 1 or 2. We recommend focusing on the areas that need the most attention while building on your existing strengths.
+
+Note: AI assessment is temporarily unavailable. Please try again later.`;
+      
+      res.json({
+        healthSpanCategory: req.body.healthSpanCategory,
+        totalScore: req.body.totalScore,
+        interestAreas: ['Physical Wellness', 'Mental Health', 'Social Connection'],
+        recommendedProgram: {
+          name: 'Wellness Program',
+          modules: ['Health Assessment', 'Personalized Recommendations', 'Progress Tracking']
+        },
+        responses: req.body.responses,
+        aiAssessment: mockAssessment
+      });
+    } else {
+      res.status(500).json({ 
+        error: 'Analysis failed: ' + error.message,
+        details: error.toString()
+      });
+    }
+  }
+});
+
+// Function to create a detailed prompt for ChatGPT
+function createAssessmentPrompt(responses, totalScore, healthSpanCategory) {
+  const questionLabels = {
+    mobility: 'Mobility & Stamina',
+    independence: 'Daily Independence',
+    energy: 'Energy & Vitality',
+    cognitive: 'Cognitive Sharpness',
+    social: 'Social Engagement',
+    resilience: 'Emotional Resilience',
+    chronic: 'Chronic Conditions',
+    balance: 'Balance & Flexibility',
+    support: 'Support Needs',
+    purpose: 'Purpose & Outlook'
+  };
+  
+  let responseText = `Health Assessment Results:\n\n`;
+  responseText += `Total Score: ${totalScore}/40\n`;
+  responseText += `Health Span Category: ${healthSpanCategory}\n\n`;
+  responseText += `Individual Question Responses:\n`;
+  
+  Object.entries(responses).forEach(([key, value]) => {
+    const label = questionLabels[key] || key;
+    responseText += `- ${label}: ${value}/4\n`;
+  });
+  
+  responseText += `\nPlease provide a comprehensive, personalized assessment that includes:\n`;
+  responseText += `1. A detailed interpretation of their current health status\n`;
+  responseText += `2. Specific strengths and areas for improvement\n`;
+  responseText += `3. Personalized recommendations for their wellness journey\n`;
+  responseText += `4. Encouraging and actionable next steps\n`;
+  responseText += `5. A compassionate tone that respects their current situation\n\n`;
+  responseText += `Focus on being supportive, practical, and motivating while being realistic about their current health span category.`;
+  
+  return responseText;
+}
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});

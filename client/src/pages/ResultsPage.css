@@ -27,6 +27,7 @@
   opacity: 0.9;
 }
 
+.ai-assessment,
 .health-span-category,
 .interest-areas,
 .recommended-program,
@@ -34,6 +35,7 @@
   margin-bottom: 50px;
 }
 
+.ai-assessment h2,
 .health-span-category h2,
 .interest-areas h2,
 .recommended-program h2,
@@ -41,6 +43,29 @@
   font-size: 2.2rem;
   margin-bottom: 25px;
   text-align: center;
+}
+
+.assessment-card {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 40px;
+  border-radius: 15px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.assessment-content {
+  line-height: 1.8;
+  font-size: 1.1rem;
+}
+
+.assessment-paragraph {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.assessment-paragraph:last-child {
+  margin-bottom: 0;
 }
 
 .category-card,
@@ -195,11 +220,16 @@
     font-size: 2.2rem;
   }
   
+  .ai-assessment h2,
   .health-span-category h2,
   .interest-areas h2,
   .recommended-program h2,
   .next-steps h2 {
     font-size: 1.8rem;
+  }
+  
+  .assessment-card {
+    padding: 20px;
   }
   
   .cta-buttons {
