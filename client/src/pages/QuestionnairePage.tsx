@@ -54,7 +54,7 @@ const QuestionnairePage: React.FC = () => {
         // Handle file upload
         const formData = new FormData();
         formData.append('questionnaire', uploadedFile);
-        const uploadResponse = await axios.post(${API_BASE}/api/upload-questionnaire, formData);
+        const uploadResponse = await axios.post(`${API_BASE}/api/upload-questionnaire`, formData);
         console.log('File uploaded:', uploadResponse.data);
       }
 
@@ -63,7 +63,7 @@ const QuestionnairePage: React.FC = () => {
       const healthSpanCategory = getHealthSpanCategory(totalScore);
 
       // Analyze questionnaire responses
-      const analysisResponse = await axios.post(${API_BASE}/api/analyze-questionnaire, {
+      const analysisResponse = await axios.post(`${API_BASE}/api/analyze-questionnaire`, {
         responses: responses,
         totalScore: totalScore,
         healthSpanCategory: healthSpanCategory
